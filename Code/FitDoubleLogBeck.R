@@ -22,6 +22,8 @@ FitDoubleLogBeck <- structure(function(
   
   ninit = 30, ### number of inital parameter sets from which to start optimization
   
+  quiet = T,
+  
   ...
   ### further arguments (currently not used)
   
@@ -145,7 +147,7 @@ FitDoubleLogBeck <- structure(function(
       prior <- rbind(opt.df[1:5, -(1:3)], opt$par)
       v <- apply(prior, 2, var)
       std.errors <- sqrt(v * s2)
-      message("Standard errors computed with backup algorithm.")
+      if(!quiet){message("Standard errors computed with backup algorithm.")}
       unc.alg <- "Standard errors computed from variance of best optimization trials"
     }
     names(std.errors) <- c("mn", "mx", "sos", "rsp", "eos", "rau")
@@ -156,7 +158,7 @@ FitDoubleLogBeck <- structure(function(
   #    } else {
   xpred <- .doubleLog(opt$par, tout)
   #    }
-  xpred.out <- zoo(xpred, order.by = tout)
+  xpred.out <- zoo::zoo(xpred, order.by = tout)
   if (plot) {
     plyr::llply(opt.l, function(opt) {
       xpred <- .doubleLog(opt$par, t)

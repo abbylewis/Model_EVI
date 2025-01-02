@@ -17,8 +17,8 @@ source("FitDoubleLogElmore.R")
 source("calc_curve.R")
 
 #Load EVI data
-evi_serc <- read_csv("../Raw_data/smithsonianenvironmentalresearchcenter_evi_series.csv")
-evi_lumcon <- read_csv("../Raw_data/louisianauniversitiesmarineconsortium_evi_series.csv")
+evi_serc <- read_csv("../Raw_data/smithsonianenvironmentalresearchcenter_evi_series.csv") %>% mutate(site_id = "SERC")
+evi_lumcon <- read_csv("../Raw_data/louisianauniversitiesmarineconsortium_evi_series.csv")  %>% mutate(site_id = "LUMCON")
 
 options(future.rng.onMisuse = "ignore")
 ```
@@ -28,15 +28,15 @@ Plot
 ```{r}
 evi_lumcon %>%
   group_by(latitude, longitude) %>%
-  summarize(n = n()) %>%
-  ggplot(aes(x = longitude, y = latitude, color = n))+
+  summarize(mean_evi = mean(evi)) %>%
+  ggplot(aes(x = longitude, y = latitude, color = mean_evi))+
   geom_point()+
   scale_color_viridis_c()
 
 evi_serc %>%
   group_by(latitude, longitude) %>%
-  summarize(n = n()) %>%
-  ggplot(aes(x = longitude, y = latitude, color = n))+
+  summarize(mean_evi = mean(evi)) %>%
+  ggplot(aes(x = longitude, y = latitude, color = mean_evi))+
   geom_point()+
   scale_color_viridis_c()
 ```
@@ -46,17 +46,22 @@ Fit double log function
 ```{r}
 #Combine both, format, and remove one grid cell that only has 3 data points
 evi_df <- evi_serc %>%
-  rbind(evi_lumcon) %>%
-  mutate(id = paste(latitude, longitude, img_year, sep = "_")) %>%
-  group_by(id) %>%
-  filter(n() > 50) %>%
+  # rbind(evi_lumcon) %>%
+  mutate(id = paste(site_id, latitude, longitude, img_year, sep = "_")) %>%
+  group_by(id, img_year) %>%
+  # This is overly restrictive
+  # filter(n() > 50) %>%
+  filter(n() > 10) %>%
+  ungroup() %>% 
+  group_by(site_id, latitude, longitude, img_year, id, img_doy) %>% 
+  summarise(evi = mean(evi)) %>% 
   ungroup()
 
 #Set up parallel processing
 plan(multisession)
 #Set ids to process
 range <- 1:length(unique(evi_df$id))
-#range <- c(898, 2994, 4951, 7024) #SERC
+# range <- c(898, 2994, 4951, 7024) #SERC
 fits_beck <- future_map(unique(evi_df$id)[range], 
                         ~ calc_curve(id_i = .x, 
                                      df = evi_df, 
@@ -64,7 +69,44 @@ fits_beck <- future_map(unique(evi_df$id)[range],
                         .progress = T) %>%
   bind_rows()
 
-write.csv(fits_beck, "../Output/fits_beck.csv")
+write.csv(fits_beck, "../Output/SERC_fits_beck.csv")
+
+#fits_elmore <- future_map(unique(evi_df$id)[range], 
+#                          ~ calc_curve(id_i = .x, 
+#                                       df = evi_df,
+#                                       method = "Elmore"), 
+#                          .progress = T) %>%
+#  bind_rows()
+```
+
+
+```{r}
+#Combine both, format, and remove one grid cell that only has 3 data points
+evi_df <- evi_lumcon %>%
+  # rbind(evi_lumcon) %>%
+  mutate(id = paste(site_id, latitude, longitude, img_year, sep = "_")) %>%
+  group_by(id, img_year) %>%
+  # This is overly restrictive
+  # filter(n() > 50) %>%
+  filter(n() > 10) %>%
+  ungroup() %>% 
+  group_by(site_id, latitude, longitude, img_year, id, img_doy) %>% 
+  summarise(evi = mean(evi)) %>% 
+  ungroup()
+
+#Set up parallel processing
+plan(multisession)
+#Set ids to process
+range <- 1:length(unique(evi_df$id))
+# range <- c(898, 2994, 4951, 7024) #SERC
+fits_beck <- future_map(unique(evi_df$id)[range], 
+                        ~ calc_curve(id_i = .x, 
+                                     df = evi_df, 
+                                     method = "Beck"), 
+                        .progress = T) %>%
+  bind_rows()
+
+write.csv(fits_beck, "../Output/LUMCON_fits_beck.csv")
 
 #fits_elmore <- future_map(unique(evi_df$id)[range], 
 #                          ~ calc_curve(id_i = .x, 
