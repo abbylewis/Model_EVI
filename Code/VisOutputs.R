@@ -9,8 +9,8 @@ pw_points <- read_csv("Raw_data/All_Data_Porewater_Biomass_Richness_XYZPrecision
 
 # Filter
 serc_pw <- pw_points %>% 
-  filter(Site == "SERC") %>% 
-  group_by(Subsite) %>% 
+  filter(Site %in% c("SERC", "LUMC")) %>% 
+  group_by(Site, Subsite) %>% 
   # Avg lat lon
   summarise(lat = mean(Latitude_dd),
             lon = mean(Longitude_dd))
@@ -28,7 +28,11 @@ serc_pw_aea <- st_transform(serc_pw_sf,
 
 
 # Load up grid data
-pheno_points <- read_csv("Raw_data/smithsonianenvironmentalresearchcenter_evi_series.csv")
+pheno_points1 <- read_csv("Raw_data/smithsonianenvironmentalresearchcenter_evi_series.csv")
+pheno_points2 <- read_csv("Raw_data/louisianauniversitiesmarineconsortium_evi_series.csv")
+
+pheno_points <- bind_rows(pheno_points1,
+                          pheno_points2)
 
 # Get unique pixels
 pheno_xy <- pheno_points %>% 
@@ -63,7 +67,7 @@ pheno_points_subset <- pheno_points %>%
 # Graph
 ggplot(pheno_points_subset, aes(x = img_doy, y = evi)) +
   geom_point() +
-  facet_wrap(Subsite~img_year)
+  facet_grid(Site~Subsite~img_year)
 
 
 # Check on model output
@@ -164,4 +168,7 @@ pred_evi <- expand_grid(model_values_filter, doy = 1:365) %>%
 ggplot(pheno_points_subset, aes(x = img_doy, y = evi)) +
   geom_point() +
   geom_line(data = pred_evi, color = "red", aes(x = doy), lty = 2) +
-  facet_wrap(Subsite~img_year)
+  facet_grid(Site~Subsite~img_year) +
+  theme_minimal() +
+  xlab("Day of Year") +
+  ylab("Enhanced Vegetation Index")
