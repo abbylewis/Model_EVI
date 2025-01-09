@@ -22,10 +22,11 @@ serc_pw_sf <- st_as_sf(serc_pw,
          coords = c("lon", "lat"),
          crs = ll_crs)
 
+st_write(serc_pw_sf, "SERC_and_lumcon_veg_sites.shp")
+
 # Project
 serc_pw_aea <- st_transform(serc_pw_sf, 
                             aea_crs)
-
 
 # Load up grid data
 pheno_points1 <- read_csv("Raw_data/smithsonianenvironmentalresearchcenter_evi_series.csv")
@@ -172,3 +173,5 @@ ggplot(pheno_points_subset, aes(x = img_doy, y = evi)) +
   theme_minimal() +
   xlab("Day of Year") +
   ylab("Enhanced Vegetation Index")
+
+ggsave("EVI_timer_series_picture.jpg", height = 6.5, width = 6.5)

@@ -219,7 +219,7 @@ ggplot(biomass_points_plot, aes(x = evi, y = Biomass_g_per_m2)) +
               inherit.aes = FALSE) +
   theme_minimal() +
   # facet_wrap(.~Site) +
-  xlab("Enhanced Vegetation Index") +
+  xlab("Predicted Enhanced Vegetation Index") +
   ylab(expression("Biomass (g m"^"-2"~")")) +
   theme(legend.title = element_blank())
 
