@@ -5,15 +5,15 @@ library(sf)
 # First let's see if queries for SERC
 
 # Load up point data
-pw_points <- read_csv("Raw_data/All_Data_Porewater_Biomass_Richness_XYZPrecision_Zstar.csv")
+pw_points <- read_csv("Raw_data/NASA_blue_methane_plant_plot_summary.csv")
 
 # Filter
 serc_pw <- pw_points %>% 
-  filter(Site %in% c("SERC", "LUMC")) %>% 
+  # filter(Site %in% c("SERC", "LUMC")) %>% 
   group_by(Site, Subsite) %>% 
   # Avg lat lon
-  summarise(lat = mean(Latitude_dd),
-            lon = mean(Longitude_dd))
+  summarise(lat = first(Latitude_dd),
+            lon = first(Longitude_dd))
 
 ll_crs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
 aea_crs <- "+proj=aea +ellps=WGS84 +lat_1=29.5 +lat_2=45.5 +lon_0=-96 +x_0=0 +y_0=0"
@@ -22,7 +22,7 @@ serc_pw_sf <- st_as_sf(serc_pw,
          coords = c("lon", "lat"),
          crs = ll_crs)
 
-st_write(serc_pw_sf, "SERC_and_lumcon_veg_sites.shp")
+st_write(serc_pw_sf, "SERC_and_lumcon_veg_sites.shp", append=FALSE)
 
 # Project
 serc_pw_aea <- st_transform(serc_pw_sf, 

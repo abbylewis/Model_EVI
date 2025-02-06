@@ -24,7 +24,13 @@ biomass_sf <- st_as_sf(biomass_xy,
 biomass_sf_aea <- st_transform(biomass_sf, 
                             aea_crs)
 
-
+uvvr_tab <- data.frame(Site = c("LUMCON", "LUMCON", "LUMCON", 
+                                "SERC", "SERC","SERC"),
+                       Subsite = c("LUM1","LUM2","LUM3",
+                                   "Mud","Hog","Kirk"),
+                       UVVR = c(0.9576, 0.0307, 0.0147,
+                                0, 0.0661, 0.1003)) %>% 
+  mutate(fraction_veg = 1/(UVVR+1))
 
 model_values_wide <- read_csv("Output/fits_beck_wide_analysis_ready.csv")
 
@@ -56,6 +62,9 @@ model_values_filter <- model_values_wide %>%
   select(Site, Subsite, Year, eos:sos)
 
 biomass_points_plot <- biomass_points %>% 
+  left_join(uvvr_tab) %>% 
+  mutate(Biomass_g_per_m2_se = Biomass_g_per_m2_se*fraction_veg,
+         Biomass_g_per_m2 = Biomass_g_per_m2*fraction_veg) %>% 
   left_join(model_values_filter) %>% 
   mutate(doy = yday(ymd(paste(Year, Month, Day, sep="-"))),
     evi = (mn + (mx - mn) * ((1/(1+exp(-rsp*(doy-sos))))  + (1/(1+exp(rau*(doy-eos))))))) 
